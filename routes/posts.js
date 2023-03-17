@@ -4,7 +4,7 @@ const User = require("../models/User");
 
 //create a post
 
-router.post("/", async (req, res) => {
+router.post("/posts", async (req, res) => {
   const newPost = new Post({
     userId: req.user._id,
     title: req.body.title,
@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
 
 //delete a post
 
-router.delete("/:id", async (req, res) => {
+router.delete("/posts/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) {
@@ -63,7 +63,7 @@ router.put("/like/:id", async (req, res) => {
 
 // dislike a post
 
-router.put("/dislike/:id", async (req, res) => {
+router.put("/unlike/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post.likes.includes(req.user._id)) {
@@ -117,7 +117,7 @@ router.get("/all_posts", async (req, res) => {
 
 //get a post
 
-router.get("/:id", async (req, res) => {
+router.get("/posts/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id).select(
       "-title -createdAt -userId -updatedAt -__v"
