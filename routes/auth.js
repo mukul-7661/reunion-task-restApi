@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
+const JwtService = require("../services/JwtService");
 
 //REGISTER
 // router.post("/register", async (req, res) => {
@@ -35,8 +36,9 @@ router.post("/", async (req, res) => {
       user.password
     );
     !validPassword && res.status(400).json("wrong password");
+    const access_token = JwtService.sign({ _id: user._id, role: user.role });
 
-    res.status(200).json(user);
+    res.status(200).json({ access_token });
   } catch (err) {
     res.status(500).json(err);
   }

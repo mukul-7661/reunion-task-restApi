@@ -1,17 +1,15 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const userRoute = require("./routes/users");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
-
-dotenv.config();
+const auth = require("./middleware/auth");
 
 mongoose.connect(
-  process.env.MONGO_URL,
+  "mongodb+srv://mukul7661:jO3kSq41pmPNNe56@cluster0.fbjoift.mongodb.net/?retryWrites=true&w=majority",
   { useNewUrlParser: true, useUnifiedTopology: true },
   () => {
     console.log("Connected to MongoDB");
@@ -24,8 +22,8 @@ app.use(helmet());
 app.use(morgan("common"));
 
 app.use("/api/authenticate", authRoute);
-app.use("/api", userRoute);
-app.use("/api/posts", postRoute);
+app.use("/api", auth, userRoute);
+app.use("/api/posts", auth, postRoute);
 
 app.listen(8800, () => {
   console.log("Backend server is running!");

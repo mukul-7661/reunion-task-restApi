@@ -5,7 +5,12 @@ const User = require("../models/User");
 //create a post
 
 router.post("/", async (req, res) => {
-  const newPost = new Post(req.body);
+  const newPost = new Post({
+    userId: req.user._id,
+    title: req.body.title,
+    desc: req.body.desc,
+    img: req.body.img,
+  });
   try {
     const savedPost = await newPost.save();
     const postId = savedPost._id;
@@ -19,48 +24,36 @@ router.post("/", async (req, res) => {
   }
 });
 
-//update a post
-
-// router.put("/:id", async (req, res) => {
-//   try {
-//     const post = await Post.findById(req.params.id);
-//     if (post.userId === req.body.userId) {
-//       await post.updateOne({ $set: req.body });
-//       res.status(200).json("the post has been updated");
-//     } else {
-//       res.status(403).json("you can update only your post");
-//     }
-//   } catch (err) {
-//     res.status(500).json(err);
-//   }
-// });
-
 //delete a post
 
 router.delete("/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.deleteOne();
-      res.status(200).json("the post has been deleted");
+    if (!post) {
+      res.status(400).json("there is not post with this id");
     } else {
-      res.status(403).json("you can delete only your post");
+      if (post.userId === req.user._id) {
+        await post.deleteOne();
+        res.status(200).json("the post has been deleted");
+      } else {
+        res.status(403).json("you can delete only your post");
+      }
     }
   } catch (err) {
     res.status(500).json(err);
   }
 });
+
 //like a post
 
 router.put("/like/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (!post.likes.includes(req.body.userId)) {
-      // console.log("hey");
-      await post.updateOne({ $push: { likes: req.body.userId } });
+    if (!post.likes.includes(req.user._id)) {
+      console.log("hey");
+      await post.updateOne({ $push: { likes: req.user._id } });
       res.status(200).json("The post has been liked");
     } else {
-      // await post.updateOne({ $pull: { likes: req.body.userId } });
       res.status(200).json("The post has been already liked");
     }
   } catch (err) {
@@ -73,12 +66,10 @@ router.put("/like/:id", async (req, res) => {
 router.put("/dislike/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (!post.likes.includes(req.body.userId)) {
-      // console.log("hey");
-      // await post.updateOne({ $push: { likes: req.body.userId } });
+    if (!post.likes.includes(req.user._id)) {
       res.status(200).json("The post is not liked. So, it cannot be disliked");
     } else {
-      await post.updateOne({ $pull: { likes: req.body.userId } });
+      await post.updateOne({ $pull: { likes: req.user._id } });
       res.status(200).json("The post has been disliked");
     }
   } catch (err) {
@@ -91,15 +82,14 @@ router.put("/dislike/:id", async (req, res) => {
 router.put("/comment/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    // if (!post.likes.includes(req.body.userId)) {
 
     const commentId =
-      Math.floor(Math.random() * 1000000000000) + "-" + req.body.userId;
+      Math.floor(Math.random() * 1000000000000) + "-" + req.user._id;
 
     await post.updateOne({
       $push: {
         comment: {
-          userId: req.body.userId,
+          userId: req.user._id,
           comment: req.body.comment,
           _id: commentId,
         },
@@ -107,26 +97,17 @@ router.put("/comment/:id", async (req, res) => {
     });
 
     res.status(200).json({ commentId });
-    // } else {
-    //   await post.updateOne({ $pull: { likes: req.body.userId } });
-    //   res.status(200).json("The post has been disliked");
-    // }
   } catch (err) {
     res.status(500).json("Error detected");
   }
 });
 
-//get timeline posts
+//get all posts
 
 router.get("/all_posts", async (req, res) => {
   try {
-    const currentUser = await User.findById(req.body.userId);
+    const currentUser = await User.findById(req.user._id);
     const userPosts = await Post.find({ userId: currentUser._id });
-    // const friendPosts = await Promise.all(
-    //   currentUser.followings.map((friendId) => {
-    //     return Post.find({ userId: friendId });
-    //   })
-    // );
 
     res.json(userPosts.concat(...userPosts));
   } catch (err) {
